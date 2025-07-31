@@ -161,6 +161,11 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 
   &:hover {
     background: #1a1a1a;
@@ -217,13 +222,13 @@ const ChangelogContent = styled.pre`
 `;
 
 const LoadingSpinner = styled.div`
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-right: 0.5rem;
+  flex-shrink: 0;
 
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -310,8 +315,18 @@ const TextArea = styled.textarea`
 
 const ButtonGroup = styled.div`
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
   margin-top: 1rem;
+
+  @media (max-width: 768px) {
+    justify-content: stretch;
+    
+    > * {
+      flex: 1;
+    }
+  }
 `;
 
 const SecondaryButton = styled(Button)`
@@ -420,7 +435,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSaveChangelog = async (publish: boolean = false) => {
+  const handleSaveChangelog = async () => {
     if (!changelogTitle.trim() || !changelog.trim()) {
       setError('Please provide a title and content for the changelog.');
       return;
@@ -438,8 +453,7 @@ export const Dashboard: React.FC = () => {
         changelog,
         selectedRepo,
         commitRange,
-        selectedCommitData,
-        publish
+        selectedCommitData
       );
       
       // Reset form
@@ -449,7 +463,7 @@ export const Dashboard: React.FC = () => {
       setCommits([]);
       setCurrentStep(1);
       
-      alert(publish ? 'Changelog published successfully!' : 'Changelog saved as draft!');
+      alert('Changelog published successfully!');
     } catch (error: any) {
       console.error('Failed to save changelog:', error);
       setError(error.response?.data?.detail || 'Failed to save changelog. Please try again.');
@@ -578,7 +592,7 @@ export const Dashboard: React.FC = () => {
                       </CommitMeta>
                       {commit.files.length > 0 && (
                         <CommitFiles>
-                          {commit.files.length} file{commit.files.length !== 1 ? 's' : ''} changed: {commit.files.slice(0, 3).map(f => f.filename).join(', ')}
+                          {commit.files.length} file{commit.files.length !== 1 ? 's' : ''} changed: {commit.files.slice(0, 3).map((f: any) => f.filename).join(', ')}
                           {commit.files.length > 3 && ` +${commit.files.length - 3} more`}
                         </CommitFiles>
                       )}
@@ -634,14 +648,8 @@ export const Dashboard: React.FC = () => {
                 <SecondaryButton onClick={() => setCurrentStep(2)}>
                   Back
                 </SecondaryButton>
-                <SecondaryButton 
-                  onClick={() => handleSaveChangelog(false)}
-                  disabled={loading}
-                >
-                  Save as Draft
-                </SecondaryButton>
                 <Button 
-                  onClick={() => handleSaveChangelog(true)}
+                  onClick={() => handleSaveChangelog()}
                   disabled={loading}
                 >
                   {loading && <LoadingSpinner />}

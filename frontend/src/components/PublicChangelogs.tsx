@@ -354,7 +354,7 @@ export const PublicChangelogs: React.FC = () => {
         </DeveloperLink>
         <HeaderContent>
           <Title>Changelogger</Title>
-          <Subtitle>Latest updates and changes</Subtitle>
+          <Subtitle>Latest updates</Subtitle>
         </HeaderContent>
         <div></div> {/* Spacer for flex layout */}
       </Header>

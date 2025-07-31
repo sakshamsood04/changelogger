@@ -49,14 +49,14 @@ export const apiService = {
     return response.data;
   },
 
-  async saveChangelog(title: string, content: string, repository: string, commitRange: string, rawCommits: any[], published: boolean = false): Promise<any> {
+  async saveChangelog(title: string, content: string, repository: string, commitRange: string, rawCommits: any[]): Promise<any> {
     const response = await api.post('/api/v1/changelogs/save', {
       title,
       content,
       repository,
       commit_range: commitRange,
       raw_commits: rawCommits,
-      published
+      published: true
     });
     return response.data;
   },

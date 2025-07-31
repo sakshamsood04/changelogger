@@ -149,7 +149,7 @@ async def save_changelog(request: ChangelogSaveRequest, db: Session = Depends(ge
             repository=request.repository,
             commit_range=request.commit_range,
             raw_commits=request.raw_commits,
-            published=request.published
+            published=True
         )
         
         db.add(changelog)
