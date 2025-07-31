@@ -3,7 +3,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import func
 from datetime import datetime
-import os
 
 # Database setup
 DATABASE_URL = "sqlite:///./changelog.db"

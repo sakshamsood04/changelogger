@@ -80,21 +80,20 @@ class GitHubAPI:
                 response.raise_for_status()
                 repos = response.json()
                 
-                # Filter for repos where user has admin permissions
-                admin_repos = []
-                for repo in repos:
-                    if repo.get("permissions", {}).get("admin", False) or repo.get("owner", {}).get("login") == repo.get("owner", {}).get("login"):
-                        admin_repos.append({
-                            "name": repo["name"],
-                            "full_name": repo["full_name"],
-                            "description": repo.get("description"),
-                            "language": repo.get("language"),
-                            "updated_at": repo["updated_at"],
-                            "private": repo["private"],
-                            "default_branch": repo["default_branch"]
-                        })
-                
-                return admin_repos
+                # Filter for repos where user has admin permissions and return simplified data
+                return [
+                    {
+                        "name": repo["name"],
+                        "full_name": repo["full_name"],
+                        "description": repo.get("description"),
+                        "language": repo.get("language"),
+                        "updated_at": repo["updated_at"],
+                        "private": repo["private"],
+                        "default_branch": repo["default_branch"]
+                    }
+                    for repo in repos
+                    if repo.get("permissions", {}).get("admin", False)
+                ]
                 
             except httpx.HTTPStatusError as e:
                 raise GitHubAPIError(f"Error fetching repositories: {e.response.status_code}")
@@ -193,15 +192,14 @@ class GitHubAPI:
         # First get the list of commits
         commits = await self.get_commits(owner, repo, since, until, max_commits)
         
-        # Then get detailed information for each commit
+        # Get detailed information for each commit concurrently would be better but for simplicity keep sequential
         detailed_commits = []
         for commit in commits[:max_commits]:  # Limit to prevent API abuse
             try:
                 detailed_commit = await self.get_commit_details(owner, repo, commit["sha"])
                 detailed_commits.append(detailed_commit)
-            except GitHubAPIError as e:
-                # Log error but continue with other commits
-                print(f"Warning: Could not fetch details for commit {commit['sha']}: {e}")
+            except GitHubAPIError:
+                # Skip failed commits silently to avoid disruption
                 continue
         
         return detailed_commits

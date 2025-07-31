@@ -4,15 +4,32 @@ import httpx
 import secrets
 from typing import Dict, Any
 from config import settings
+import time
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # In-memory session storage (for demo - use Redis/database in production)
 sessions: Dict[str, Dict[str, Any]] = {}
 
+def cleanup_expired_sessions():
+    """Remove sessions older than 24 hours to prevent memory leaks"""
+    current_time = time.time()
+    expired_sessions = []
+    
+    for session_id, session_data in sessions.items():
+        session_created_at = session_data.get('created_at', 0)
+        if current_time - session_created_at > 86400:  # 24 hours
+            expired_sessions.append(session_id)
+    
+    for session_id in expired_sessions:
+        del sessions[session_id]
+
 @router.get("/github/login")
 async def github_login():
     """Initiate GitHub OAuth login"""
+    # Clean up expired sessions periodically
+    cleanup_expired_sessions()
+    
     if not settings.validate_github_oauth_config():
         raise HTTPException(
             status_code=500, 
@@ -23,7 +40,10 @@ async def github_login():
     state = secrets.token_urlsafe(32)
     
     # Store state in session (in production, use proper session management)
-    sessions[state] = {"initiated": True}
+    sessions[state] = {
+        "initiated": True, 
+        "created_at": time.time()
+    }
     
     # GitHub OAuth authorization URL
     github_auth_url = (
@@ -97,7 +117,8 @@ async def github_callback(code: str, state: str, response: Response):
                     "avatar_url": user_data["avatar_url"],
                     "authenticated": True
                 },
-                "access_token": access_token
+                "access_token": access_token,
+                "created_at": time.time()
             }
             
             # Set HTTP-only cookie

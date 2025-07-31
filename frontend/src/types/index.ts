@@ -28,16 +28,29 @@ export interface Repository {
   language?: string;
   default_branch: string;
   updated_at: string;
+  private: boolean;
 }
 
-export interface ChangelogRequest {
-  owner: string;
-  repo: string;
-  since_date: string;
-  max_commits: number;
-}
-
-export interface ChangelogResponse {
-  status: string;
-  changelog: string;
+export interface Commit {
+  sha: string;
+  message: string;
+  author: {
+    name: string;
+    email: string;
+    date: string;
+  };
+  url: string;
+  stats?: {
+    additions: number;
+    deletions: number;
+    total: number;
+  };
+  files: Array<{
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch?: string;
+  }>;
 }
