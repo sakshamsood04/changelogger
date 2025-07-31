@@ -22,7 +22,7 @@ class GitHubAPI:
         if self.user_token:
             token = self.user_token
         else:
-            if not settings.validate_github_config():
+            if not settings.GITHUB_TOKEN:
                 raise GitHubAPIError("GitHub token not configured. Please set GITHUB_TOKEN in your .env file.")
             token = settings.GITHUB_TOKEN
         

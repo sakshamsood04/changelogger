@@ -71,7 +71,7 @@ async def fetch_commits(commits_request: CommitsFetchRequest, request: Request):
 async def generate_changelog(request: ChangelogGenerateRequest):
     """Generate changelog from selected commits using AI"""
     try:
-        if not settings.validate_openai_config():
+        if not settings.OPENAI_API_KEY:
             raise HTTPException(status_code=500, detail="OpenAI API not configured")
         
         # Filter commits by selected SHAs
@@ -130,9 +130,6 @@ Please create a changelog:
             }
             
         except Exception as openai_error:
-            import traceback
-            error_details = f"OpenAI API error: {str(openai_error)}\nTraceback: {traceback.format_exc()}"
-            print(error_details)  # For debugging
             raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(openai_error)}")
         
     except Exception as e:

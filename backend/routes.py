@@ -1,10 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel
 from github_api import github_api, GitHubAPI, GitHubAPIError
 from auth_middleware import get_authenticated_user_token
-import httpx
-from config import settings
 
 # Create router for GitHub API endpoints
 router = APIRouter(prefix="/api/v1", tags=["GitHub API"])
@@ -45,15 +41,5 @@ async def list_user_repositories(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.get("/openai/test")
-async def test_openai_connection():
-    """Test OpenAI API connection and key validity"""
-    openai_connected = await settings.test_openai_connection()
-    
-    return {
-        "status": "success" if openai_connected else "error",
-        "message": "OpenAI API connection successful" if openai_connected else "OpenAI API connection failed",
-        "configured": openai_connected
-    }
 
  

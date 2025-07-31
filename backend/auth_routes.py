@@ -30,7 +30,7 @@ async def github_login():
     # Clean up expired sessions periodically
     cleanup_expired_sessions()
     
-    if not settings.validate_github_oauth_config():
+    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
         raise HTTPException(
             status_code=500, 
             detail="GitHub OAuth not properly configured"

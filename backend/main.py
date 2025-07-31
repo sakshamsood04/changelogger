@@ -32,29 +32,18 @@ app.include_router(changelog_router)
 
 @app.get("/")
 async def root():
-    # Test actual API connectivity
-    github_connected = await settings.test_github_connection()
-    openai_connected = await settings.test_openai_connection()
-    
     return {
         "message": "Changelog Generator API is running!",
         "version": "1.0.0",
-        "docs": "/docs",
-        "github_configured": github_connected,
-        "openai_configured": openai_connected
+        "docs": "/docs"
     }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with actual API connectivity testing"""
-    github_connected = await settings.test_github_connection()
-    openai_connected = await settings.test_openai_connection()
-    
+    """Basic health check endpoint"""
     return {
         "status": "healthy", 
-        "service": "changelog-generator",
-        "github_configured": github_connected,
-        "openai_configured": openai_connected
+        "service": "changelog-generator"
     }
 
 if __name__ == "__main__":
