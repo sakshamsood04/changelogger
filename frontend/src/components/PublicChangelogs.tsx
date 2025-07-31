@@ -55,6 +55,10 @@ const DeveloperLink = styled(Link)`
   }
 `;
 
+const Spacer = styled.div`
+  width: 120px; /* Approximately matches the Developer View button width */
+`;
+
 // Stacked card container
 const StackedCardContainer = styled.div`
   position: relative;
@@ -356,7 +360,7 @@ export const PublicChangelogs: React.FC = () => {
           <Title>Changelogger</Title>
           <Subtitle>Latest updates</Subtitle>
         </HeaderContent>
-        <div></div> {/* Spacer for flex layout */}
+        <Spacer />
       </Header>
 
       {changelogs.length === 0 ? (
