@@ -27,12 +27,11 @@ class ChangelogService:
         }
     
     def _extract_commit_data(self, commits: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Extract and structure relevant data from commits for AI analysis"""
+        """Extract and structure relevant commit data for AI analysis"""
         structured_commits = []
         
         for commit in commits:
             commit_data = {
-                "sha": commit["sha"][:8],  # Short SHA
                 "message": commit["commit"]["message"],
                 "author": commit["commit"]["author"]["name"],
                 "date": commit["commit"]["author"]["date"],

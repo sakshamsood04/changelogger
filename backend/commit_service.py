@@ -79,7 +79,6 @@ class CommitService:
         
         for i, commit in enumerate(commits, 1):
             formatted_text += f"COMMIT {i}:\n"
-            formatted_text += f"SHA: {commit['sha'][:8]}\n"
             formatted_text += f"Author: {commit['author']['name']}\n"
             formatted_text += f"Date: {commit['author']['date']}\n"
             formatted_text += f"Message: {commit['message']}\n"
