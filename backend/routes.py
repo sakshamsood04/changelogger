@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
-from github_api import github_api, GitHubAPIError
+from github_api import github_api, GitHubAPI, GitHubAPIError
+from auth_middleware import get_authenticated_user_token
 from changelog_service import changelog_service, ChangelogServiceError
 import httpx
 from config import settings
@@ -44,10 +45,15 @@ async def test_github_connection():
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/repositories")
-async def list_user_repositories():
+async def list_user_repositories(request: Request):
     """List repositories that the user owns or has admin access to"""
     try:
-        repos = await github_api.get_user_repositories()
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
+        # Create GitHub API instance with user's token
+        user_github_api = GitHubAPI(user_token=user_token)
+        repos = await user_github_api.get_user_repositories()
         return {
             "status": "success",
             "count": len(repos),
@@ -59,14 +65,18 @@ async def list_user_repositories():
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.post("/changelog/generate")
-async def generate_changelog(request: ChangelogRequest):
+async def generate_changelog(changelog_request: ChangelogRequest, request: Request):
     """Generate AI-powered changelog for a repository since a given date"""
     try:
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
         changelog = await changelog_service.generate_changelog(
-            owner=request.owner,
-            repo=request.repo,
-            since_date=request.since_date,
-            max_commits=request.max_commits or 50
+            owner=changelog_request.owner,
+            repo=changelog_request.repo,
+            since_date=changelog_request.since_date,
+            max_commits=changelog_request.max_commits or 50,
+            user_token=user_token
         )
         
         return {
@@ -125,10 +135,15 @@ async def test_openai_connection():
         }
 
 @router.post("/github/repository/info")
-async def get_repository_info(request: RepositoryRequest):
+async def get_repository_info(repo_request: RepositoryRequest, request: Request):
     """Get basic information about a GitHub repository"""
     try:
-        repo_info = await github_api.get_repository_info(request.owner, request.repo)
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
+        # Create GitHub API instance with user's token
+        user_github_api = GitHubAPI(user_token=user_token)
+        repo_info = await user_github_api.get_repository_info(repo_request.owner, repo_request.repo)
         return {
             "status": "success",
             "repository": {
@@ -149,15 +164,20 @@ async def get_repository_info(request: RepositoryRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.post("/github/commits")
-async def get_commits(request: CommitsRequest):
+async def get_commits(commits_request: CommitsRequest, request: Request):
     """Get commits from a repository with optional date filtering"""
     try:
-        commits = await github_api.get_commits(
-            request.owner, 
-            request.repo, 
-            request.since, 
-            request.until,
-            request.max_commits or 10
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
+        # Create GitHub API instance with user's token
+        user_github_api = GitHubAPI(user_token=user_token)
+        commits = await user_github_api.get_commits(
+            commits_request.owner, 
+            commits_request.repo, 
+            commits_request.since, 
+            commits_request.until,
+            commits_request.max_commits or 10
         )
         
         # Return simplified commit data
@@ -182,15 +202,20 @@ async def get_commits(request: CommitsRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.post("/github/commits/with-diffs")
-async def get_commits_with_diffs(request: CommitsRequest):
+async def get_commits_with_diffs(commits_request: CommitsRequest, request: Request):
     """Get commits with detailed file changes and diffs for changelog generation"""
     try:
-        commits_with_diffs = await github_api.get_commits_with_diffs(
-            request.owner, 
-            request.repo, 
-            request.since, 
-            request.until,
-            request.max_commits or 10
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
+        # Create GitHub API instance with user's token
+        user_github_api = GitHubAPI(user_token=user_token)
+        commits_with_diffs = await user_github_api.get_commits_with_diffs(
+            commits_request.owner, 
+            commits_request.repo, 
+            commits_request.since, 
+            commits_request.until,
+            commits_request.max_commits or 10
         )
         
         # Process and return commit data with diff information
@@ -236,10 +261,15 @@ async def get_commits_with_diffs(request: CommitsRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 @router.get("/github/commit/{owner}/{repo}/{sha}")
-async def get_commit_details(owner: str, repo: str, sha: str):
+async def get_commit_details(owner: str, repo: str, sha: str, request: Request):
     """Get detailed information about a specific commit"""
     try:
-        commit_details = await github_api.get_commit_details(owner, repo, sha)
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
+        # Create GitHub API instance with user's token
+        user_github_api = GitHubAPI(user_token=user_token)
+        commit_details = await user_github_api.get_commit_details(owner, repo, sha)
         
         return {
             "status": "success",

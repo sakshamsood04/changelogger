@@ -3,7 +3,7 @@ import httpx
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from config import settings
-from github_api import github_api, GitHubAPIError
+from github_api import github_api, GitHubAPI, GitHubAPIError
 
 class ChangelogServiceError(Exception):
     """Custom exception for changelog service errors"""
@@ -164,7 +164,8 @@ Return ONLY the JSON response, no additional text."""
         owner: str, 
         repo: str, 
         since_date: str,
-        max_commits: int = 50
+        max_commits: int = 50,
+        user_token: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive changelog for a repository since a given date
@@ -179,8 +180,14 @@ Return ONLY the JSON response, no additional text."""
             Structured changelog data
         """
         try:
+            # Use user token if provided, otherwise fall back to global instance
+            if user_token:
+                github_api_instance = GitHubAPI(user_token=user_token)
+            else:
+                github_api_instance = github_api
+            
             # Fetch commits with diffs since the specified date
-            commits_with_diffs = await github_api.get_commits_with_diffs(
+            commits_with_diffs = await github_api_instance.get_commits_with_diffs(
                 owner, repo, since=since_date, max_commits=max_commits
             )
             

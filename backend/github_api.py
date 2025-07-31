@@ -10,19 +10,25 @@ class GitHubAPIError(Exception):
 class GitHubAPI:
     """GitHub API client for fetching repository data"""
     
-    def __init__(self):
+    def __init__(self, user_token: Optional[str] = None):
         self.base_url = settings.GITHUB_API_BASE_URL
+        self.user_token = user_token
         self._headers = None
     
     @property
     def headers(self):
         """Lazy load headers to check token at runtime"""
-        if not settings.validate_github_config():
-            raise GitHubAPIError("GitHub token not configured. Please set GITHUB_TOKEN in your .env file.")
+        # Use user token if provided, otherwise fall back to server token
+        if self.user_token:
+            token = self.user_token
+        else:
+            if not settings.validate_github_config():
+                raise GitHubAPIError("GitHub token not configured. Please set GITHUB_TOKEN in your .env file.")
+            token = settings.GITHUB_TOKEN
         
         if self._headers is None:
             self._headers = {
-                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                "Authorization": f"token {token}",
                 "Accept": "application/vnd.github.v3+json",
                 "User-Agent": "changelog-generator/1.0"
             }
@@ -200,5 +206,5 @@ class GitHubAPI:
         
         return detailed_commits
 
-# Create global GitHub API instance
+# Create global GitHub API instance (for server operations)
 github_api = GitHubAPI() 

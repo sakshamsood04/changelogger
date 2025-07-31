@@ -30,7 +30,7 @@ async def github_login():
         f"https://github.com/login/oauth/authorize"
         f"?client_id={settings.GITHUB_CLIENT_ID}"
         f"&redirect_uri=http://localhost:8000/auth/github/callback"
-        f"&scope=user:email"
+        f"&scope=user:email,repo"
         f"&state={state}"
     )
     

@@ -28,6 +28,7 @@ class Settings:
     
     def validate_github_config(self) -> bool:
         """Check if GitHub API token is properly configured (basic validation)"""
+        # Made optional since we now primarily use user OAuth tokens
         return (self.GITHUB_TOKEN is not None and 
                 self.GITHUB_TOKEN != "your_github_personal_access_token_here" and
                 len(self.GITHUB_TOKEN.strip()) > 0)

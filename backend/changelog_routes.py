@@ -8,6 +8,7 @@ import json
 from database import get_db, Changelog, init_db
 from commit_service import commit_service
 from config import settings
+from auth_middleware import get_authenticated_user_token
 
 router = APIRouter(prefix="/api/v1/changelogs", tags=["Changelogs"])
 
@@ -43,15 +44,19 @@ class ChangelogUpdateRequest(BaseModel):
     published: Optional[bool] = None
 
 @router.post("/fetch-commits")
-async def fetch_commits(request: CommitsFetchRequest):
+async def fetch_commits(commits_request: CommitsFetchRequest, request: Request):
     """Fetch commits with detailed information for selection"""
     try:
+        # Get user's GitHub token from session
+        user_token = get_authenticated_user_token(request)
+        
         commits = await commit_service.fetch_commits_with_details(
-            owner=request.owner,
-            repo=request.repo,
-            since_date=request.since_date,
-            until_date=request.until_date,
-            max_commits=request.max_commits or 50
+            owner=commits_request.owner,
+            repo=commits_request.repo,
+            since_date=commits_request.since_date,
+            until_date=commits_request.until_date,
+            max_commits=commits_request.max_commits or 50,
+            user_token=user_token
         )
         
         return {

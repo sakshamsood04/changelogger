@@ -1,4 +1,4 @@
-from github_api import github_api, GitHubAPIError
+from github_api import github_api, GitHubAPI, GitHubAPIError
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
@@ -14,14 +14,21 @@ class CommitService:
         repo: str, 
         since_date: Optional[str] = None,
         until_date: Optional[str] = None,
-        max_commits: int = 50
+        max_commits: int = 50,
+        user_token: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Fetch commits with detailed information including diffs
         """
         try:
+            # Use user token if provided, otherwise fall back to global instance
+            if user_token:
+                github_api_instance = GitHubAPI(user_token=user_token)
+            else:
+                github_api_instance = github_api
+            
             # Get commits with diffs
-            commits_with_diffs = await github_api.get_commits_with_diffs(
+            commits_with_diffs = await github_api_instance.get_commits_with_diffs(
                 owner, repo, since_date, until_date, max_commits
             )
             
