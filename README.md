@@ -44,6 +44,11 @@ This application solves the common problem of creating meaningful changelogs for
 ### Why SQLite?
 - **Simplicity**: Zero configuration for development
 
+## Development Tools Used
+
+- **Claude Code**: Used for generating the initial application boilerplate, setting up the FastAPI backend structure, React app, and database models
+- **Cursor**: Used for finer code edits, and implementing specific features
+
 ## Getting Started
 
 ### Prerequisites
