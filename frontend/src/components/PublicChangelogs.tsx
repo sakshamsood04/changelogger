@@ -55,14 +55,84 @@ const DeveloperLink = styled(Link)`
   }
 `;
 
-const ChangelogCard = styled.div`
+// Stacked card container
+const StackedCardContainer = styled.div`
+  position: relative;
+  margin-bottom: 2rem;
+`;
+
+// Individual changelog card
+const ChangelogCard = styled.div<{ isStacked?: boolean; stackIndex?: number; isExpanded?: boolean }>`
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: ${props => props.isStacked && !props.isExpanded ? '0' : '2rem'};
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: ${props => props.isStacked && !props.isExpanded ? 'pointer' : 'default'};
+  transition: all 0.3s ease;
+  
+  ${props => props.isStacked && !props.isExpanded && `
+    position: ${props.stackIndex === 0 ? 'relative' : 'absolute'};
+    top: ${props.stackIndex! * 8}px;
+    left: ${props.stackIndex! * 4}px;
+    right: ${props.stackIndex! * -4}px;
+    z-index: ${10 - props.stackIndex!};
+    transform: rotate(${props.stackIndex! * 0.5}deg);
+    
+    &:hover {
+      transform: rotate(${props.stackIndex! * 0.5}deg) translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+  `}
+  
+  ${props => props.isStacked && props.isExpanded && `
+    position: relative;
+    transform: none;
+    margin-bottom: 1rem;
+    opacity: 1;
+    z-index: 1;
+  `}
+`;
+
+// Stack header for showing repository info and count
+const StackHeader = styled.div<{ isExpanded: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(108, 117, 125, 0.1);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(108, 117, 125, 0.15);
+  }
+`;
+
+const StackTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #2c2c2c;
+  margin: 0;
+`;
+
+const StackCount = styled.span`
+  background: rgba(108, 117, 125, 0.2);
+  color: #495057;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+`;
+
+const ExpandIcon = styled.span<{ isExpanded: boolean }>`
+  font-size: 1.2rem;
+  transition: transform 0.2s ease;
+  transform: ${props => props.isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};
 `;
 
 const ChangelogTitle = styled.h2`
@@ -179,10 +249,22 @@ const EmptyState = styled.div`
   }
 `;
 
+const ExpandedStackContainer = styled.div`
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(108, 117, 125, 0.05);
+  margin-bottom: 2rem;
+`;
+
+interface GroupedChangelogs {
+  [repository: string]: any[];
+}
+
 export const PublicChangelogs: React.FC = () => {
   const [changelogs, setChangelogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedStacks, setExpandedStacks] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadPublicChangelogs();
@@ -200,6 +282,53 @@ export const PublicChangelogs: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Group changelogs by repository
+  const groupedChangelogs: GroupedChangelogs = changelogs.reduce((groups, changelog) => {
+    const repo = changelog.repository;
+    if (!groups[repo]) {
+      groups[repo] = [];
+    }
+    groups[repo].push(changelog);
+    return groups;
+  }, {} as GroupedChangelogs);
+
+  const toggleStack = (repository: string) => {
+    const newExpandedStacks = new Set(expandedStacks);
+    if (expandedStacks.has(repository)) {
+      newExpandedStacks.delete(repository);
+    } else {
+      newExpandedStacks.add(repository);
+    }
+    setExpandedStacks(newExpandedStacks);
+  };
+
+  const renderChangelogCard = (changelog: any, isStacked: boolean, stackIndex?: number, isExpanded?: boolean) => (
+    <ChangelogCard 
+      key={changelog.id} 
+      isStacked={isStacked} 
+      stackIndex={stackIndex} 
+      isExpanded={isExpanded}
+      onClick={isStacked && !isExpanded ? (e) => {
+        e.stopPropagation();
+        toggleStack(changelog.repository);
+      } : undefined}
+    >
+      <ChangelogTitle>{changelog.title}</ChangelogTitle>
+      <ChangelogMeta>
+        <span><strong>Repository:</strong> {changelog.repository}</span>
+        <span><strong>Published:</strong> {new Date(changelog.created_at).toLocaleDateString()}</span>
+      </ChangelogMeta>
+      <ChangelogContent>
+        <ReactMarkdown>
+          {changelog.content_preview || 'No content available.'}
+        </ReactMarkdown>
+      </ChangelogContent>
+      <ReadMoreLink to={`/changelog/${changelog.id}`}>
+        Read full changelog →
+      </ReadMoreLink>
+    </ChangelogCard>
+  );
 
   if (loading) {
     return (
@@ -236,23 +365,54 @@ export const PublicChangelogs: React.FC = () => {
           <p>Check back later for updates!</p>
         </EmptyState>
       ) : (
-        changelogs.map((changelog) => (
-          <ChangelogCard key={changelog.id}>
-            <ChangelogTitle>{changelog.title}</ChangelogTitle>
-            <ChangelogMeta>
-              <span><strong>Repository:</strong> {changelog.repository}</span>
-              <span><strong>Published:</strong> {new Date(changelog.created_at).toLocaleDateString()}</span>
-            </ChangelogMeta>
-            <ChangelogContent>
-              <ReactMarkdown>
-                {changelog.content_preview || 'No content available.'}
-              </ReactMarkdown>
-            </ChangelogContent>
-            <ReadMoreLink to={`/changelog/${changelog.id}`}>
-              Read full changelog →
-            </ReadMoreLink>
-          </ChangelogCard>
-        ))
+        Object.entries(groupedChangelogs).map(([repository, repoChangelogs]) => {
+          const isExpanded = expandedStacks.has(repository);
+          const hasMultipleChangelogs = repoChangelogs.length > 1;
+
+          if (!hasMultipleChangelogs) {
+            // Single changelog - render normally
+            return renderChangelogCard(repoChangelogs[0], false);
+          }
+
+          // Multiple changelogs - render as stack
+          return (
+            <StackedCardContainer key={repository}>
+              {!isExpanded && (
+                <>
+                  <StackHeader isExpanded={isExpanded} onClick={() => toggleStack(repository)}>
+                    <div>
+                      <StackTitle>{repository}</StackTitle>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <StackCount>{repoChangelogs.length} changelogs</StackCount>
+                      <ExpandIcon isExpanded={isExpanded}>▼</ExpandIcon>
+                    </div>
+                  </StackHeader>
+                  {repoChangelogs.map((changelog, index) => 
+                    renderChangelogCard(changelog, true, index, false)
+                  )}
+                </>
+              )}
+              
+              {isExpanded && (
+                <ExpandedStackContainer>
+                  <StackHeader isExpanded={isExpanded} onClick={() => toggleStack(repository)}>
+                    <div>
+                      <StackTitle>{repository}</StackTitle>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <StackCount>{repoChangelogs.length} changelogs</StackCount>
+                      <ExpandIcon isExpanded={isExpanded}>▼</ExpandIcon>
+                    </div>
+                  </StackHeader>
+                  {repoChangelogs.map((changelog) => 
+                    renderChangelogCard(changelog, true, 0, true)
+                  )}
+                </ExpandedStackContainer>
+              )}
+            </StackedCardContainer>
+          );
+        })
       )}
     </Container>
   );
